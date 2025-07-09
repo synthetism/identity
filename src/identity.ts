@@ -114,7 +114,7 @@ export class Identity {
       }
 
       // 3. Create credential unit and learn from key
-      const credentialUnit = new CredentialUnit();
+      const credentialUnit = CredentialUnit.create();
       credentialUnit.learn([key.teach()]);
 
       // 4. Create identity credential
@@ -199,8 +199,8 @@ export class Identity {
         if (!didUnit) {
           throw new Error('Failed to create DID unit');
         }
-        
-        const credentialUnit = new CredentialUnit();
+
+        const credentialUnit = CredentialUnit.create();
         credentialUnit.learn([key.teach()]);
         
         return new Identity(identityData, didUnit, signer, key, credentialUnit);
@@ -238,7 +238,7 @@ export class Identity {
       }
 
       // 4. Create credential unit and learn from key
-      const credentialUnit = new CredentialUnit();
+      const credentialUnit = CredentialUnit.create();
       credentialUnit.learn([key.teach()]);
 
       return new Identity(identityData, didUnit, signer, key, credentialUnit);

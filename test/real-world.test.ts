@@ -3,7 +3,7 @@
  */
 
 import { Identity } from '../src/identity';
-import realWorldData from '../src/0en.json';
+import realWorldData from './0en.json';
 
 async function testRealWorldIdentity() {
   console.log('🌍 Testing Identity with real-world data...');

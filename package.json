@@ -53,7 +53,7 @@
   "homepage": "https://synthetism.ai",
   "license": "MIT",
   "dependencies": {
-    "@synet/credential": "^1.0.2-dev.2",
+    "@synet/credential": "^1.0.2-dev.4",
     "@synet/did": "^1.0.4-dev.0",
     "@synet/keys": "^1.0.5-dev.7",
     "@synet/patterns": "^2.1.6"
