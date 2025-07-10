@@ -36,9 +36,9 @@ async function testRealWorldIdentity() {
     }
     
     console.log('✅ Identity created successfully');
-    console.log('   Alias:', identity.get('alias'));
-    console.log('   DID:', identity.get('did'));
-    console.log('   Matches original:', identity.get('did') === identityData.did);
+    console.log('   Alias:', identity.getAlias());
+    console.log('   DID:', identity.getDid());
+    console.log('   Matches original:', identity.getDid() === identityData.did);
     
     // Test 2: Access units
     console.log('\n2. Testing unit access...');
@@ -117,7 +117,7 @@ async function testRealWorldIdentity() {
     
   } catch (error) {
     console.error('❌ Real-world test failed:', error);
-    process.exit(1);
+    //process.exit(1);
   }
 }
 

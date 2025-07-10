@@ -13,7 +13,7 @@
  * Usage:
  * ```typescript
  * // Generate new identity
- * const identity = Identity.generate('0en');
+ * const identity = await Identity.generate('alice');
  * 
  * // Create from existing data
  * const identity = Identity.create(identityData);
@@ -22,9 +22,10 @@
  * await identity.signer().sign('hello');
  * const did = identity.did().resolve();
  * 
- * // Access data
- * const alias = identity.get('alias');
- * const publicKey = identity.get('publicKeyHex');
+ * // Access data with explicit getters
+ * const alias = identity.getAlias();
+ * const publicKey = identity.getPublicKeyHex();
+ * const did = identity.getDid();
  * ```
  * 
  * @author Synet Team
@@ -285,10 +286,66 @@ export class Identity {
   // ==========================================
 
   /**
-   * Get identity data by key
+   * Get identity alias
    */
-  get(key: keyof IIdentity): any {
-    return this._identity[key];
+  getAlias(): string {
+    return this._identity.alias;
+  }
+
+  /**
+   * Get DID string
+   */
+  getDid(): string {
+    return this._identity.did;
+  }
+
+  /**
+   * Get key identifier
+   */
+  getKid(): string {
+    return this._identity.kid;
+  }
+
+  /**
+   * Get public key in hex format
+   */
+  getPublicKeyHex(): string {
+    return this._identity.publicKeyHex;
+  }
+
+  /**
+   * Get private key in hex format (if available)
+   */
+  getPrivateKeyHex(): string | undefined {
+    return this._identity.privateKeyHex;
+  }
+
+  /**
+   * Get identity provider
+   */
+  getProvider(): string {
+    return this._identity.provider;
+  }
+
+  /**
+   * Get verifiable credential
+   */
+  getCredential(): SynetVerifiableCredential<BaseCredentialSubject> {
+    return this._identity.credential;
+  }
+
+  /**
+   * Get metadata
+   */
+  getMetadata(): Record<string, unknown> | undefined {
+    return this._identity.metadata;
+  }
+
+  /**
+   * Get creation date
+   */
+  getCreatedAt(): Date {
+    return this._identity.createdAt;
   }
 
   /**

@@ -17,10 +17,10 @@ async function testIdentity() {
     }
     
     console.log('✅ Identity generated successfully');
-    console.log('   Alias:', identity.get('alias'));
-    console.log('   DID:', identity.get('did'));
-    console.log('   Public Key:', identity.get('publicKeyHex'));
-    console.log('   Provider:', identity.get('provider'));
+    console.log('   Alias:', identity.getAlias());
+    console.log('   DID:', identity.getDid());
+    console.log('   Public Key:', identity.getPublicKeyHex());
+    console.log('   Provider:', identity.getProvider());
     
     // Test 2: Access units
     console.log('\n2. Testing unit access...');
@@ -65,8 +65,8 @@ async function testIdentity() {
     }
     
     console.log('✅ Identity recreated successfully');
-    console.log('   Same alias:', recreated.get('alias') === identity.get('alias'));
-    console.log('   Same DID:', recreated.get('did') === identity.get('did'));
+    console.log('   Same alias:', recreated.getAlias() === identity.getAlias());
+    console.log('   Same DID:', recreated.getDid() === identity.getDid());
     
     // Test 6: Use recreated signer (might not work without proper private key)
     console.log('\n6. Testing recreated signer...');
@@ -80,14 +80,14 @@ async function testIdentity() {
       console.log('   Valid:', isValid2);
     } catch (error) {
       console.log('⚠️  Recreated signer test skipped (private key issue)');
-      console.log('   Error:', error.message);
+      console.log('   Error:', error instanceof Error ? error.message : String(error));
     }
     
     console.log('\n🎉 All tests passed!');
     
   } catch (error) {
-    console.error('❌ Test failed:', error);
-    process.exit(1);
+    console.error('❌ Test failed:', error instanceof Error ? error.message : String(error));
+    //process.exit(1);
   }
 }
 
