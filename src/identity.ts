@@ -35,6 +35,7 @@ import { Signer, hexToPem, hexPrivateKeyToPem, pemToHex } from '@synet/keys';
 import { DID } from '@synet/did';  
 import { CredentialUnit } from '@synet/credential';
 import type { SynetVerifiableCredential, BaseCredentialSubject } from '@synet/credential';
+import { Result } from './result';
 
 export interface IIdentity {
   alias: string
@@ -76,7 +77,7 @@ export class Identity {
   /**
    * Generate a new identity with fresh cryptographic material
    */
-  static async generate(alias: string): Promise<Identity | null> {
+  static async generate(alias: string): Promise<Result<Identity>> {
     try {
       // 1. Generate cryptographic material
       const signer = Signer.generate('ed25519', { name: `${alias}-signer` });
@@ -130,19 +131,23 @@ export class Identity {
         }
       };
 
-      const credential = await credentialUnit.issueCredential(
+      const credentialResult = await credentialUnit.issueCredential(
         subject,
         'IdentityCredential',
         didString
       );
 
-      if (!credential) {
+      if (!credentialResult.isSuccess) {
         throw new Error('Failed to issue identity credential');
       }
 
-      // 5. For now, we'll skip storing private key hex (we'll add proper extraction later)
-      // This is fine for the initial test - the signer itself has the private key
-      const privateKeyHex = undefined; // TODO: Add proper private key extraction
+      const credential = credentialResult.value;
+
+      // 5. Extract private key from signer
+      const privateKeyHex = signer.getPrivateKeyHex();
+      if (!privateKeyHex) {
+        console.warn('Warning: Could not extract private key from signer');
+      }
 
       // 6. Build identity data
       const identityData: IIdentity = {
@@ -157,17 +162,22 @@ export class Identity {
         createdAt: new Date()
       };
 
-      return new Identity(identityData, didUnit, signer, key, credentialUnit);
+      const identity = new Identity(identityData, didUnit, signer, key, credentialUnit);
+      
+      return Result.success(identity);
     } catch (error) {
       console.error('Failed to generate identity:', error);
-      return null;
+      return Result.fail(
+        error instanceof Error ? error.message : 'Unknown error occurred',
+        error instanceof Error ? error : undefined
+      );
     }
   }
 
   /**
    * Create identity from existing data
    */
-  static create(identityData: IIdentity): Identity | null {
+  static create(identityData: IIdentity): Result<Identity> {
     try {
       // For now, if no private key is provided, we'll create a new signer
       // This is a temporary solution - in practice, we need proper key storage
@@ -204,7 +214,7 @@ export class Identity {
         const credentialUnit = CredentialUnit.create();
         credentialUnit.learn([key.teach()]);
         
-        return new Identity(identityData, didUnit, signer, key, credentialUnit);
+        return Result.success(new Identity(identityData, didUnit, signer, key, credentialUnit));
       }
 
       // 1. Reconstruct signer from private key
@@ -242,10 +252,13 @@ export class Identity {
       const credentialUnit = CredentialUnit.create();
       credentialUnit.learn([key.teach()]);
 
-      return new Identity(identityData, didUnit, signer, key, credentialUnit);
+      return Result.success(new Identity(identityData, didUnit, signer, key, credentialUnit));
     } catch (error) {
       console.error('Failed to create identity:', error);
-      return null;
+      return Result.fail(
+        error instanceof Error ? error.message : 'Unknown error occurred',
+        error instanceof Error ? error : undefined
+      );
     }
   }
 
@@ -348,11 +361,32 @@ export class Identity {
     return this._identity.createdAt;
   }
 
-  /**
-   * Export full identity data
-   */
-  toJson(): IIdentity {
-    return { ...this._identity };
+  toJSON() {
+    return {
+      alias: this._identity.alias,
+      did: this._identity.did,
+      kid: this._identity.kid,
+      publicKeyHex: this._identity.publicKeyHex,
+      privateKeyHex: this._identity.privateKeyHex,
+      provider: this._identity.provider,
+      credential: this._identity.credential,
+      metadata: this._identity.metadata || {},
+      createdAt: this._identity.createdAt,
+    };
+  }
+
+  toDomain():IIdentity {
+    return {
+      alias: this._identity.alias,
+      did: this._identity.did,
+      kid: this._identity.kid,
+      publicKeyHex: this._identity.publicKeyHex,
+      privateKeyHex: this._identity.privateKeyHex,
+      provider: this._identity.provider,
+      credential: this._identity.credential,
+      metadata: this._identity.metadata || {},
+      createdAt: this._identity.createdAt // Convert to ISO string for consistency
+    };
   }
 
   /**

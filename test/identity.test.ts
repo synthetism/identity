@@ -10,11 +10,13 @@ async function testIdentity() {
   try {
     // Test 1: Generate new identity
     console.log('\n1. Testing Identity.generate()...');
-    const identity = await Identity.generate('test-user');
+    const result = await Identity.generate('test-user');
     
-    if (!identity) {
-      throw new Error('Failed to generate identity');
+    if (!result.isSuccess) {
+      throw new Error(result.errorMessage || 'Failed to generate identity');
     }
+    
+    const identity = result.value;
     
     console.log('✅ Identity generated successfully');
     console.log('   Alias:', identity.getAlias());
@@ -47,22 +49,24 @@ async function testIdentity() {
     
     // Test 4: Export data
     console.log('\n4. Testing data export...');
-    const json = identity.toJson();
+    const json = identity.toJSON();
     const publicData = identity.public();
     
     console.log('✅ Data export works');
     console.log('   Full JSON has private key:', !!json.privateKeyHex);
-    console.log('   Public data has private key:', !!(publicData as any).privateKeyHex);
+    console.log('   Public data has private key:', !!('privateKeyHex' in publicData));
     
     // Test 5: Create from data (skip if no private key)
     console.log('\n5. Testing Identity.create()...');
-    const recreated = Identity.create(json);
+    const recreatedResult = Identity.create(json);
     
-    if (!recreated) {
-      console.log('⚠️  Identity recreation skipped (no private key)');
+    if (!recreatedResult.isSuccess) {
+      console.log('⚠️  Identity recreation skipped:', recreatedResult.errorMessage);
       console.log('\n🎉 Core tests passed!');
       return;
     }
+    
+    const recreated = recreatedResult.value;
     
     console.log('✅ Identity recreated successfully');
     console.log('   Same alias:', recreated.getAlias() === identity.getAlias());

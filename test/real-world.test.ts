@@ -29,11 +29,13 @@ async function testRealWorldIdentity() {
       createdAt: new Date(identityData.createdAt)
     };
     
-    const identity = Identity.create(identityDataWithDate);
+    const result = Identity.create(identityDataWithDate);
     
-    if (!identity) {
-      throw new Error('Failed to create identity from real-world data');
+    if (!result.success || !result.identity) {
+      throw new Error(result.error || 'Failed to create identity from real-world data');
     }
+    
+    const identity = result.identity;
     
     console.log('✅ Identity created successfully');
     console.log('   Alias:', identity.getAlias());
@@ -106,7 +108,7 @@ async function testRealWorldIdentity() {
     
     // Test 6: Export and compare data
     console.log('\n6. Testing data export...');
-    const exportedData = identity.toJson();
+    const exportedData = identity.toJSON();
     
     console.log('✅ Data export comparison:');
     console.log('   Same alias:', exportedData.alias === identityData.alias);
