@@ -31,7 +31,7 @@
  * @author Synet Team
  */
 
-import { Signer, hexToPem, hexPrivateKeyToPem, pemToHex } from '@synet/keys';
+import { Signer, hexToPem, hexPrivateKeyToPem, pemToHex, generateKeyPair } from '@synet/keys';
 import { DID } from '@synet/did';  
 import { CredentialUnit } from '@synet/credential';
 import type { SynetVerifiableCredential, BaseCredentialSubject } from '@synet/credential';
@@ -79,10 +79,26 @@ export class Identity {
    */
   static async generate(alias: string): Promise<Result<Identity>> {
     try {
-      // 1. Generate cryptographic material
-      const signer = Signer.generate('ed25519', { name: `${alias}-signer` });
+      // 1. Generate cryptographic material in hex format
+      const keyPair = generateKeyPair('ed25519', { format: 'hex' });
+      if (!keyPair) {
+        throw new Error('Failed to generate key pair');
+      }
+
+      // 2. Convert hex keys to PEM for signer creation
+      const publicKeyPEM = hexToPem(keyPair.publicKey, 'ed25519');
+      const privateKeyPEM = hexPrivateKeyToPem(keyPair.privateKey);
+
+      if (!publicKeyPEM || !privateKeyPEM) {
+        throw new Error('Failed to convert keys to PEM format');
+      }
+
+      // 3. Create signer from the PEM keys
+      const signer = Signer.create(privateKeyPEM, publicKeyPEM, 'ed25519', { 
+        name: `${alias}-signer` 
+      });
       if (!signer) {
-        throw new Error('Failed to generate signer');
+        throw new Error('Failed to create signer from key pair');
       }
 
       const key = signer.createKey();
@@ -90,17 +106,16 @@ export class Identity {
         throw new Error('Failed to create key from signer');
       }
 
-      // 2. Create DID from public key
+      // 4. Get public key in hex format (should match our generated key)
       const publicKeyHex = signer.getPublicKeyHex();
       if (!publicKeyHex) {
         throw new Error('Failed to get public key hex');
       }
 
-      const publicKeyPEM = hexToPem(publicKeyHex, 'ed25519');
-      if (!publicKeyPEM) {
-        throw new Error('Failed to convert public key to PEM');
-      }
+      // 5. Use the hex private key we generated
+      const privateKeyHex = keyPair.privateKey;
 
+      // 6. Create DID from public key (reuse the PEM we already have)
       const didUnit = DID.createFromKey(publicKeyPEM, 'ed25519', { alias });
       if (!didUnit) {
         throw new Error('Failed to create DID from public key');
@@ -115,11 +130,11 @@ export class Identity {
         throw new Error('Failed to generate DID string');
       }
 
-      // 3. Create credential unit and learn from key
+      // 5. Create credential unit and learn from key
       const credentialUnit = CredentialUnit.create();
       credentialUnit.learn([key.teach()]);
 
-      // 4. Create identity credential
+      // 6. Create identity credential
       const subject: BaseCredentialSubject = {
         holder: {
           id: didString,
@@ -143,13 +158,7 @@ export class Identity {
 
       const credential = credentialResult.value;
 
-      // 5. Extract private key from signer
-      const privateKeyHex = signer.getPrivateKeyHex();
-      if (!privateKeyHex) {
-        console.warn('Warning: Could not extract private key from signer');
-      }
-
-      // 6. Build identity data
+      // 7. Build identity data
       const identityData: IIdentity = {
         alias,
         did: didString,
