@@ -33,7 +33,7 @@
 
 import { Signer, hexToPem, hexPrivateKeyToPem, pemToHex, generateKeyPair } from '@synet/keys';
 import { DID } from '@synet/did';  
-import { CredentialUnit } from '@synet/credential';
+import { Credential } from '@synet/credential';
 import type { SynetVerifiableCredential, BaseCredentialSubject } from '@synet/credential';
 import { Result } from './result';
 
@@ -58,14 +58,14 @@ export class Identity {
   private _didUnit: DID;
   private _signerUnit: Signer;
   private _keyUnit: ReturnType<Signer['createKey']>;
-  private _credentialUnit: CredentialUnit;
+  private _credentialUnit: Credential;
 
   private constructor(
     identity: IIdentity,
     didUnit: DID,
     signerUnit: Signer,
     keyUnit: ReturnType<Signer['createKey']>,
-    credentialUnit: CredentialUnit
+    credentialUnit: Credential
   ) {
     this._identity = identity;
     this._didUnit = didUnit;
@@ -131,7 +131,7 @@ export class Identity {
       }
 
       // 5. Create credential unit and learn from key
-      const credentialUnit = CredentialUnit.create();
+      const credentialUnit = Credential.create();
       credentialUnit.learn([key.teach()]);
 
       // 6. Create identity credential
@@ -220,7 +220,7 @@ export class Identity {
           throw new Error('Failed to create DID unit');
         }
 
-        const credentialUnit = CredentialUnit.create();
+        const credentialUnit = Credential.create();
         credentialUnit.learn([key.teach()]);
         
         return Result.success(new Identity(identityData, didUnit, signer, key, credentialUnit));
@@ -258,7 +258,7 @@ export class Identity {
       }
 
       // 4. Create credential unit and learn from key
-      const credentialUnit = CredentialUnit.create();
+      const credentialUnit = Credential.create();
       credentialUnit.learn([key.teach()]);
 
       return Result.success(new Identity(identityData, didUnit, signer, key, credentialUnit));
@@ -299,7 +299,7 @@ export class Identity {
   /**
    * Get Credential unit for verifiable credential operations
    */
-  credential(): CredentialUnit {
+  credential(): Credential {
     return this._credentialUnit;
   }
 

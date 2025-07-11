@@ -53,9 +53,9 @@
   "homepage": "https://synthetism.ai",
   "license": "MIT",
   "dependencies": {
-    "@synet/credential": "^1.0.2-dev.6",
+    "@synet/credential": "^1.0.2-dev.7",
     "@synet/did": "^1.0.4-dev.1",
-    "@synet/keys": "^1.0.5-dev.10",
+    "@synet/keys": "^1.0.5",
     "@synet/unit": "^1.0.4"
   }
 }
