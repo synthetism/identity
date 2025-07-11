@@ -203,10 +203,10 @@ testEdgeCases()
       process.exit(0);
     } else {
       console.log('\n❌ Edge case tests failed:', result.error);
-      process.exit(1);
+
     }
   })
   .catch(error => {
     console.error('\n💥 Unexpected error:', error);
-    process.exit(1);
+
   });

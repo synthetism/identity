@@ -55,6 +55,7 @@
   "dependencies": {
     "@synet/credential": "^1.0.2-dev.6",
     "@synet/did": "^1.0.4-dev.1",
-    "@synet/keys": "^1.0.5-dev.9"
+    "@synet/keys": "^1.0.5-dev.10",
+    "@synet/unit": "^1.0.4"
   }
 }

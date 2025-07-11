@@ -31,11 +31,15 @@ async function testRealWorldIdentity() {
     
     const result = Identity.create(identityDataWithDate);
     
-    if (!result.success || !result.identity) {
-      throw new Error(result.error || 'Failed to create identity from real-world data');
+    if (!result.isSuccess) {
+      console.error('❌ Identity creation failed:', result.errorMessage);
+      if (result.errorCause) {
+        console.error('❌ Exception details:', result.errorCause);
+      }
+      throw new Error(result.errorMessage || 'Failed to create identity from real-world data');
     }
     
-    const identity = result.identity;
+    const identity = result.value;
     
     console.log('✅ Identity created successfully');
     console.log('   Alias:', identity.getAlias());
@@ -71,13 +75,18 @@ async function testRealWorldIdentity() {
     const verifyResult = await credentialUnit.verifyCredential(existingCredential);
     
     console.log('✅ Credential verification result:');
-    console.log('   Verified:', verifyResult?.verified);
-    console.log('   Issuer:', verifyResult?.issuer);
-    console.log('   Subject:', verifyResult?.subject);
+    if (verifyResult.isSuccess) {
+      const result = verifyResult.value;
+      console.log('   Verified:', result.verified);
+      console.log('   Issuer:', result.issuer);
+      console.log('   Subject:', result.subject);
+    } else {
+      console.log('   Verification failed:', verifyResult.errorMessage);
+    }
     
     // Test 5: Issue new credential with same identity
     console.log('\n5. Testing credential issuance...');
-    const newCredential = await credentialUnit.issueCredential(
+    const newCredentialResult = await credentialUnit.issueCredential(
       {
         holder: {
           id: identityData.did,
@@ -93,7 +102,8 @@ async function testRealWorldIdentity() {
       identityData.did
     );
     
-    if (newCredential) {
+    if (newCredentialResult.isSuccess) {
+      const newCredential = newCredentialResult.value;
       console.log('✅ New credential issued successfully');
       console.log('   ID:', newCredential.id);
       console.log('   Type:', newCredential.type);
@@ -101,9 +111,13 @@ async function testRealWorldIdentity() {
       
       // Verify the new credential
       const newVerifyResult = await credentialUnit.verifyCredential(newCredential);
-      console.log('   New credential verified:', newVerifyResult?.verified);
+      if (newVerifyResult.isSuccess) {
+        console.log('   New credential verified:', newVerifyResult.value.verified);
+      } else {
+        console.log('   New credential verification failed:', newVerifyResult.errorMessage);
+      }
     } else {
-      console.log('❌ Failed to issue new credential');
+      console.log('❌ Failed to issue new credential:', newCredentialResult.errorMessage);
     }
     
     // Test 6: Export and compare data
