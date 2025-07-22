@@ -48,11 +48,11 @@ async function testRealWorldIdentity() {
     
     // Test 2: Access units
     console.log('\n2. Testing unit access...');
-    const signer = identity.signer();
-    const key = identity.key();
-    const didUnit = identity.did();
-    const credentialUnit = identity.credential();
-    
+    const signer = identity.signerUnit();
+    const key = identity.keyUnit();
+    const didUnit = identity.didUnit();
+    const credentialUnit = identity.credentialUnit();
+
     console.log('✅ All units accessible');
     console.log('   Signer:', signer.whoami());
     console.log('   Key:', key?.whoami() || 'null');
