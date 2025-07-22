@@ -1,6 +1,6 @@
 {
   "name": "@synet/identity",
-  "version": "1.0.1-dev.9",
+  "version": "1.0.1-dev.14",
   "description": "Complex, Enterprise-grade, bloated Identity service implemented on Veramo 'Framework'",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -53,9 +53,10 @@
   "homepage": "https://synthetism.ai",
   "license": "MIT",
   "dependencies": {
-    "@synet/credential": "^1.0.2-dev.7",
-    "@synet/did": "^1.0.4-dev.1",
-    "@synet/keys": "^1.0.5",
-    "@synet/unit": "^1.0.4"
+    "@synet/credential": "^1.0.3",
+    "@synet/did": "^1.0.5",
+    "@synet/fs": "^1.0.4",
+    "@synet/keys": "^1.0.6",
+    "@synet/unit": "^1.0.5"
   }
 }

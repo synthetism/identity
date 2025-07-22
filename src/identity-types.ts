@@ -1,119 +1,137 @@
+export type RequireOnly<T, K extends keyof T> = Required<Pick<T, K>> &
+  Partial<T>;
 
-export type RequireOnly<T, K extends keyof T> = Required<Pick<T, K>> & Partial<T>
-
-export type TKeyType = 'Ed25519' | 'Secp256k1' | 'Secp256r1' | 'X25519' | 'Bls12381G1' | 'Bls12381G2' 
+export type TKeyType =
+  | "Ed25519"
+  | "Secp256k1"
+  | "Secp256r1"
+  | "X25519"
+  | "Bls12381G1"
+  | "Bls12381G2";
 
 export interface IIdentifier {
   /**
    * Decentralized identifier
    */
-  did: string
+  did: string;
 
   /**
    * Optional. Identifier alias. Can be used to reference an object in an external system
    */
-  alias?: string
+  alias?: string;
 
   /**
    * Identifier provider name
    */
-  provider: string
+  provider: string;
 
   /**
    * Controller key id
    */
-  controllerKeyId?: string
+  controllerKeyId?: string;
 
   /**
    * Array of managed keys
    */
-  keys: IKey[]
+  keys: IKey[];
 
   /**
    * Array of services
    */
-  services: IService[]
+  services: IService[];
 }
 
 export interface IKey {
-
-  kid: string
-  kms: string
-  type: TKeyType
-  publicKeyHex: string
-  privateKeyHex?: string
-  meta?: KeyMetadata | null
+  kid: string;
+  kms: string;
+  type: TKeyType;
+  publicKeyHex: string;
+  privateKeyHex?: string;
+  meta?: KeyMetadata | null;
 }
 
 export interface IWGKey {
-    
-  kid: string
+  kid: string;
 
   /**
    * Key Management System
    */
-  kms: string
+  kms: string;
 
   /**
    * Key type
    */
-  type: 'Curve25519'
+  type: "Curve25519";
 
   /**
    * Public key
    */
-  publicKeyHex: string
+  publicKeyHex: string;
 
   /**
    * Optional. Private key
    */
-  privateKeyHex?: string
+  privateKeyHex?: string;
 
   /**
    * Optional. Key metadata. This should be used to determine which algorithms are supported.
    */
-  meta?: KeyMetadata | null
+  meta?: KeyMetadata | null;
 }
 
 export interface IService {
   /**
    * ID
    */
-  id: string
+  id: string;
 
   /**
    * Service type
    */
-  type: string
+  type: string;
 
   /**
    * Endpoint URL
    */
-  serviceEndpoint: IServiceEndpoint | IServiceEndpoint[]
+  serviceEndpoint: IServiceEndpoint | IServiceEndpoint[];
 
   /**
    * Optional. Description
    */
-  description?: string
+  description?: string;
 }
 
 export interface KeyMetadata {
-  algorithms?: TAlg[]
+  algorithms?: TAlg[];
 
-  [x: string]: unknown
+  [x: string]: unknown;
 }
 
-export type TAlg = 'ES256K' | 'ES256K-R' | 'ES256' | 'EdDSA' | 'ECDH' | 'ECDH-ES' | 'ECDH-1PU' | string
+export type TAlg =
+  | "ES256K"
+  | "ES256K-R"
+  | "ES256"
+  | "EdDSA"
+  | "ECDH"
+  | "ECDH-ES"
+  | "ECDH-1PU"
+  | string;
 
-export type IServiceEndpoint = string | Record<string, unknown>
+export type IServiceEndpoint = string | Record<string, unknown>;
 
 export interface ManagedPrivateKey {
-  alias: string
-  privateKeyHex: string
-  type: TKeyType
+  alias: string;
+  privateKeyHex: string;
+  type: TKeyType;
 }
-export type ImportablePrivateKey = RequireOnly<ManagedPrivateKey, 'privateKeyHex' | 'type'>
+export type ImportablePrivateKey = RequireOnly<
+  ManagedPrivateKey,
+  "privateKeyHex" | "type"
+>;
 
-export type ManagedKeyInfo = Omit<IKey, 'privateKeyHex'>
+export type ManagedKeyInfo = Omit<IKey, "privateKeyHex">;
 
-export type MinimalImportableKey = RequireOnly<IKey, 'privateKeyHex' | 'type' | 'kms'>
+export type MinimalImportableKey = RequireOnly<
+  IKey,
+  "privateKeyHex" | "type" | "kms"
+>;
