@@ -73,16 +73,16 @@ describe('Identity Unit Architecture', () => {
       const identity = result.value;
       
       // Test composed unit access
-      expect(identity.did()).toBeDefined();
-      expect(identity.signer()).toBeDefined();
-      expect(identity.key()).toBeDefined();
-      expect(identity.credential()).toBeDefined();
-      
+      expect(identity.didUnit()).toBeDefined();
+      expect(identity.signerUnit()).toBeDefined();
+      expect(identity.keyUnit()).toBeDefined();
+      expect(identity.credentialUnit()).toBeDefined();
+
       // Test composed unit operations
-      const didUnit = identity.did();
+      const didUnit = identity.didUnit();
       expect(didUnit.whoami()).toContain('did');
-      
-      const signerUnit = identity.signer();
+
+      const signerUnit = identity.signerUnit();
       expect(signerUnit.whoami()).toContain('Signer');
     }
   });

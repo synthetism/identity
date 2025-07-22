@@ -1,17 +1,28 @@
-# @synet/identity v1.0.2
+# @synet/identity
+
+```bash
+ __   _     _      ____ _____                    
+( (` \ \_/ | |\ | | |_   | |                     
+_)_)  |_|  |_| \| |_|__  |_|                     
+     _   ___   ____  _     _____  _  _____  _    
+    | | | | \ | |_  | |\ |  | |  | |  | |  \ \_/ 
+    |_| |_|_/ |_|__ |_| \|  |_|  |_|  |_|   |_|  
+
+version: 1.0.1    
+```
 
 **Identity Unit for Decentralized Identity Management**
 
 A complete Unit Architecture implementation for creating and managing decentralized identities through composition of DID, Signer, Key, and Credential units.
 
-## Features ⭐
+## Features 
 
-- 🎯 **Unit Architecture** - Props-based construction with teaching/learning contracts
-- 🔐 **Complete Identity Management** - DID generation, signing, and verifiable credentials
-- 🧩 **Unit Composition** - Composes DID, Signer, Key, and Credential units
-- 📋 **Result Pattern** - Type-safe error handling for all operations
-- 🔄 **Capability Learning** - Learn capabilities from other units
-- 🛡️ **Security First** - Secure cryptographic operations with ed25519
+- **Unit Architecture** - Props-based construction with teaching/learning contracts
+- **Complete Identity Management** - DID generation, signing, and verifiable credentials
+- **Unit Composition** - Composes DID, Signer, Key, and Credential units
+- **Result Pattern** - Type-safe error handling for all operations
+- **Capability Learning** - Learn capabilities from other units
+- **Security First** - Secure cryptographic operations with ed25519
 
 ## Installation
 
@@ -33,9 +44,9 @@ if (result.isSuccess) {
   const identity = result.value;
   
   console.log('Identity created:', {
-    alias: identity.props.alias,
-    did: identity.props.did,
-    publicKey: identity.props.publicKeyHex
+    alias: identity.alias,
+    did: identity.did,
+    publicKey: identity.publicKeyHex
   });
 }
 ```
@@ -62,37 +73,32 @@ if (identity.isSuccess) {
 
 ```typescript
 // Required Unit methods
-identity.whoami()           // Get unit identity
-identity.capabilities()     // List all capabilities
+identity.whoami()          // Get unit identity
+identity.capabilities()    // List all capabilities
 identity.help()            // Show help information
-identity.teach()           // Get teaching contract
 
-// Learning capabilities
-identity.learn([contract]) // Learn from other units
-identity.can('capability') // Check capability availability
-identity.execute('cmd')    // Execute learned capabilities
 ```
 
 ### Native Capabilities
 
 ```typescript
 // Identity operations
-await identity.generateIdentity('alias')
-await identity.issueCredential(subject, 'CredentialType', issuer)
-await identity.sign('data to sign')
-await identity.verify('data', 'signature')
-identity.getDid()          // Get DID string
-identity.getPublicKey()    // Get public key hex
+await identity.generate('alias')
+identity.public(); // public identity data
+identity.present(); // type of IdentityPresent { did, alias, publicKey, credential}
+identity.toJSON();  // JSON object for storage
+identity.toDomain(); // IIdentity domain type.
+
 ```
 
-## Composed Units Access 🧩
+## Composed Units Access 
 
 ```typescript
 // Access composed units for direct operations
-const didUnit = identity.did()
-const signerUnit = identity.signer()
-const keyUnit = identity.key()
-const credentialUnit = identity.credential()
+const didUnit = identity.didUnit()
+const signerUnit = identity.signerUnit()
+const keyUnit = identity.keyUnit()
+const credentialUnit = identity.credentialUnit()
 
 // Use composed unit capabilities
 const signature = await signerUnit.sign('hello world')
@@ -114,38 +120,78 @@ const {
   createdAt
 } = identity.props
 
-// Legacy compatibility methods still available
-identity.getAlias()
-identity.getDid()
-identity.getPublicKeyHex()
+// Getters to access public properties
+identity.alias()
+identity.did()
+identity.publicKeyHex()
+identity.credential()
+identity.metadata()
+
 ```
 
-## Teaching & Learning 🎓
-
-### Teaching Capabilities
+## Types
 
 ```typescript
-const teachingContract = identity.teach()
-console.log('Available capabilities:', Object.keys(teachingContract.capabilities))
 
-// Share with another unit
-otherUnit.learn([identity.teach()])
-```
+// identity.create() input signature
 
-### Learning from Others
-
-```typescript
-// Learn from a signer unit
-const signer = Signer.create({ /* config */ })
-identity.learn([signer.teach()])
-
-// Now can execute signer capabilities
-if (identity.can('signer.sign')) {
-  const signature = await identity.execute('signer.sign', 'data')
+export interface IdentityConfig {
+  alias?: string;
+  did?: string;
+  kid?: string;
+  publicKeyHex?: string;
+  privateKeyHex?: string;
+  provider?: string;
+  credential?: SynetVerifiableCredential<BaseCredentialSubject>;
+  metadata?: Record<string, unknown>;
+  createdAt?: Date;
 }
+
+// Internal state after validation
+
+export interface IdentityProps extends UnitProps {
+  dna: UnitSchema;
+  alias: string;
+  did: string;
+  kid: string;
+  publicKeyHex: string;
+  privateKeyHex?: string;
+  provider: string;
+  credential: SynetVerifiableCredential<BaseCredentialSubject>;
+  metadata: Record<string, unknown>;
+  createdAt: Date;
+  // Composed units for internal operations
+  didUnit: DID;
+  signerUnit: Signer;
+  keyUnit: ReturnType<Signer["createKey"]>;
+  credentialUnit: Credential;
+}
+
+// Domain interface identity.toDomain()
+
+export interface IIdentity {
+  alias: string
+  did: string
+  kid: string
+  publicKeyHex: string
+  privateKeyHex?: string 
+  provider: string // did:key | did:web
+  credential: SynetVerifiableCredential<BaseCredentialSubject>
+  metadata?: Record<string, unknown>
+  createdAt: Date 
+}
+
+// Presentation interface identity.present(); 
+
+export interface IdentityPresent {
+  did: string
+  publicKeyHex: string
+  credential: SynetVerifiableCredential<BaseCredentialSubject>  
+}
+
 ```
 
-## Result Pattern 🎯
+## Error handling 
 
 All async operations return `Result<T>` for type-safe error handling:
 
@@ -159,114 +205,6 @@ if (result.isSuccess) {
   console.error('Failed:', result.error)
   console.log('Cause:', result.cause)
 }
-```
-
-## Real-World Example 📱
-
-```typescript
-import { Identity, type IdentityConfig } from '@synet/identity'
-import { Credential } from '@synet/credential'
-
-async function createUserIdentity(userData: {
-  name: string
-  email: string
-}) {
-  // 1. Generate new identity
-  const identityResult = await Identity.generate(userData.name)
-  if (!identityResult.isSuccess) {
-    throw new Error(identityResult.error)
-  }
-  
-  const identity = identityResult.value
-  
-  // 2. Create additional credential unit for custom credentials
-  const customCredential = Credential.create()
-  identity.learn([customCredential.teach()])
-  
-  // 3. Issue user credential
-  const credentialResult = await identity.issueCredential(
-    {
-      holder: {
-        id: identity.props.did,
-        name: userData.name,
-        email: userData.email
-      }
-    },
-    'UserCredential',
-    identity.props.did
-  )
-  
-  if (!credentialResult.isSuccess) {
-    throw new Error(credentialResult.error)
-  }
-  
-  // 4. Export identity data
-  return {
-    identity: identity.toDomain(),
-    credential: credentialResult.value,
-    publicProfile: identity.public() // No private key
-  }
-}
-
-// Usage
-const user = await createUserIdentity({
-  name: 'Alice Smith',
-  email: 'alice@example.com'
-})
-
-console.log('User identity created:', user.identity.alias)
-console.log('DID:', user.identity.did)
-```
-
-## Error Handling Strategy 🛡️
-
-### Simple Operations (Exception-based)
-```typescript
-try {
-  const identity = Identity.create(config)
-  if (!identity.isSuccess) {
-    throw new Error(identity.error)
-  }
-  // Use identity
-} catch (error) {
-  console.error('Identity creation failed:', error.message)
-}
-```
-
-### Complex Operations (Result Pattern)
-```typescript
-const result = await Identity.generate('alice')
-
-if (result.isSuccess) {
-  const identity = result.value
-  // Success path
-} else {
-  // Detailed error handling
-  console.error('Generation failed:', {
-    error: result.error,
-    cause: result.cause,
-    suggestions: 'Check cryptographic dependencies'
-  })
-}
-```
-
-## Migration from v1.0.x 🔄
-
-### Old API (Identity Operator)
-```typescript
-// Old: Operator pattern
-const identity = await Identity.generate('alice')
-const alias = identity.getAlias()
-const signer = identity.signer()
-```
-
-### New API (Unit Architecture)
-```typescript
-// New: Unit Architecture with props
-const result = await Identity.generate('alice')
-const identity = result.value
-const alias = identity.props.alias        // Props-based access
-const signer = identity.signer()         // Still available
 ```
 
 ## Dependencies 📦

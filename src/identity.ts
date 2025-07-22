@@ -35,7 +35,7 @@ import {
   type TeachingContract,
 } from "@synet/unit";
 
-const VERSION = "1.0.3";
+
 // External input to static create()
 export interface IdentityConfig {
   alias?: string;
@@ -68,6 +68,26 @@ export interface IdentityProps extends UnitProps {
   credentialUnit: Credential;
 }
 
+export interface IIdentity {
+  alias: string
+  did: string
+  kid: string
+  publicKeyHex: string
+  privateKeyHex?: string // Optional private key, can be used for signing
+  provider: string // did:key | did:web
+  credential: SynetVerifiableCredential<BaseCredentialSubject>
+  metadata?: Record<string, unknown>
+  createdAt: Date // Optional creation date for the vault  
+}
+
+export interface IdentityPresent {
+  did: string
+  publicKeyHex: string
+  credential: SynetVerifiableCredential<BaseCredentialSubject>  
+}
+
+
+const VERSION = "1.0.1";
 /**
  * Identity Unit - Unit Architecture implementation
  * Composes DID, Signer, Key, and Credential units
@@ -418,6 +438,43 @@ ${Array.from(this._capabilities.keys())
     // Graceful fallback to native capability
     return this.props.signerUnit.verify(data, signature);
   }
+  
+
+  get publicKeyHex():string {  
+    return this.props.publicKeyHex;
+  }
+
+  get privateKeyHex():string | undefined {
+    
+    return this.props.privateKeyHex;
+  }
+
+  get alias():string {
+
+    return this.props.alias;
+  }
+
+  get did():string {
+    
+    return this.props.did;
+  }
+
+  get credential():SynetVerifiableCredential<BaseCredentialSubject> {
+ 
+    return this.props.credential;
+  }
+
+  get metadata():Record<string, unknown> {
+ 
+    return this.props.metadata;
+  }
+
+   /**
+   * Get identity provider
+   */
+  get provider(): string {
+    return this.props.provider;
+  }
 
   getDid(): string {
     return this.props.did;
@@ -427,35 +484,40 @@ ${Array.from(this._capabilities.keys())
     return this.props.publicKeyHex;
   }
 
+  /**
+   * @deprecated Use getPublicKey() instead
+   */
+  getPublicKeyHex(): string {
+    return this.props.publicKeyHex;
+  }
+
+
   // ==========================================
   // UNIT ACCESS (for operations)
   // ==========================================
 
-  /**
-   * Get DID unit for identifier operations
-   */
-  did(): DID {
+  
+  didUnit(): DID {
     return this.props.didUnit;
   }
-
   /**
    * Get Key unit for public key operations
    */
-  key(): ReturnType<Signer["createKey"]> {
+  keyUnit(): ReturnType<Signer["createKey"]> {
     return this.props.keyUnit;
   }
 
   /**
    * Get Signer unit for signing operations
    */
-  signer(): Signer {
+  signerUnit(): Signer {
     return this.props.signerUnit;
   }
 
   /**
    * Get Credential unit for verifiable credential operations
    */
-  credential(): Credential {
+  credentialUnit(): Credential {
     return this.props.credentialUnit;
   }
 
@@ -526,7 +588,7 @@ ${Array.from(this._capabilities.keys())
     };
   }
 
-  toDomain(): IdentityConfig {
+  toDomain(): IIdentity {
     return {
       alias: this.props.alias,
       did: this.props.did,
@@ -540,11 +602,21 @@ ${Array.from(this._capabilities.keys())
     };
   }
 
+
+
   /**
    * Export public identity data (no private key)
    */
-  public(): Omit<IdentityConfig, "privateKeyHex"> {
+  public(): Omit<IIdentity, "privateKeyHex"> {
     const { privateKeyHex, ...publicData } = this.props;
     return publicData;
+  }
+
+  present(): IdentityPresent {
+    return {
+      did: this.props.did,
+      publicKeyHex: this.props.publicKeyHex,
+      credential: this.props.credential,
+    };
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@synet/identity",
-  "version": "1.0.1-dev.14",
+  "version": "1.0.1",
   "description": "Complex, Enterprise-grade, bloated Identity service implemented on Veramo 'Framework'",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
