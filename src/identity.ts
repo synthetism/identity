@@ -25,6 +25,7 @@ import { Credential } from "@synet/credential";
 import type {
   SynetVerifiableCredential,
   BaseCredentialSubject,
+  IdentitySubject,
 } from "@synet/credential";
 import { Result } from "./result";
 import {
@@ -38,11 +39,11 @@ import {
 
 // External input to static create()
 export interface IdentityConfig {
-  alias?: string;
-  did?: string;
+  alias: string;
+  did: string;
+  publicKeyHex: string;
+  privateKeyHex: string;
   kid?: string;
-  publicKeyHex?: string;
-  privateKeyHex?: string;
   provider?: string;
   credential?: SynetVerifiableCredential<BaseCredentialSubject>;
   metadata?: Record<string, unknown>;
@@ -101,21 +102,23 @@ export class Identity extends Unit<IdentityProps> {
   /**
    * Create identity from existing data or config
    */
-  static create(config: IdentityConfig = {}): Result<Identity> {
+  static create(config: IdentityConfig): Result<Identity> {
     try {
-      // For now, if no private key is provided, we'll create a new signer
-      // This is a temporary solution - in practice, we need proper key storage
-      if (!config.privateKeyHex || !config.publicKeyHex) {
-        return Result.fail("No  public and private key provided");
+  
+      if (!config.privateKeyHex || !config.publicKeyHex || !config.did || !config.alias) {
+        return Result.fail("Required fields: alias, publicKeyHex, privateKeyHex, did");
       }
 
-      // 1. Reconstruct signer from private key
+      // 1. Prepare cryptographic material 
+
       const privateKeyPEM = hexPrivateKeyToPem(config.privateKeyHex);
       const publicKeyPEM = hexToPem(config.publicKeyHex, "ed25519");
 
       if (!privateKeyPEM || !publicKeyPEM) {
         throw new Error("Failed to convert keys to PEM format");
       }
+
+      // 2. Create signer
 
       const signer = Signer.create({
         privateKeyPEM,
@@ -130,22 +133,26 @@ export class Identity extends Unit<IdentityProps> {
         return Result.fail("Failed to create signer from key material");
       }
 
-      // 2. Create key from signer
+      // 3. Create key from signer
       const key = signer.createKey();
       if (!key) {
         return Result.fail("Failed to create key from signer");
       }
 
-      // 3. Reconstruct DID unit from public key
-      const didUnit = DID.createFromKey(publicKeyPEM, "ed25519", {
-        alias: config.alias || "unknown",
+      // 4. Create DID unit from public key
+      const didUnit = DID.create({
+        publicKeyHex: config.publicKeyHex,
+        keyType: "Ed25519",
+        metadata: {
+          alias: config.alias || "unknown",
+        },
       });
 
       if (!didUnit) {
         return Result.fail("Failed to reconstruct DID");
       }
 
-      // 4. Create credential unit and learn from key
+      // 5. Create credential unit and learn from key. Key already knows how to sign from signer.
       const credentialUnit = Credential.create();
       credentialUnit.learn([key.teach()]);
 
@@ -225,26 +232,29 @@ export class Identity extends Unit<IdentityProps> {
       const privateKeyHex = keyPair.privateKey;
 
       // 6. Create DID from public key (reuse the PEM we already have)
-      const didUnit = DID.createFromKey(publicKeyPEM, "ed25519", { alias });
+      const didUnit = DID.create({
+        publicKeyHex,
+        keyType: "Ed25519",
+        metadata: { alias }
+      });
       if (!didUnit) {
         throw new Error("Failed to create DID from public key");
       }
+  
+      // 7. Generate  DID from publicKey
 
-      // Learn key capabilities to generate DID
-      didUnit.learn([key.teach()]);
-
-      // Generate the DID string
-      const didString = await didUnit.generateKey();
+      const didString =  didUnit.generateKey();
       if (!didString) {
         throw new Error("Failed to generate DID string");
       }
 
-      // 7. Create credential unit and learn from key
+      // 8. Create credential unit and learn from key
       const credentialUnit = Credential.create();
       credentialUnit.learn([key.teach()]);
 
-      // 8. Create identity credential
-      const subject: BaseCredentialSubject = {
+      // 9. Create self-signed verifiable credential
+
+      const subject: IdentitySubject = {
         holder: {
           id: didString,
           name: alias,
@@ -289,8 +299,12 @@ export class Identity extends Unit<IdentityProps> {
       };
 
       const identity = new Identity(props);
+      
+      // 10. Teach identity how to generate keys, sign and create verifiable credentials
 
       identity.learn([signer.teach(), key.teach(), credentialUnit.teach()]);
+
+      // 11. Full SSI Identity that can issue VCs and sign, while preserving its secrets. 
 
       return Result.success(identity);
     } catch (error) {
@@ -321,9 +335,21 @@ export class Identity extends Unit<IdentityProps> {
 Native Capabilities:
   • issueCredential() - Issue verifiable credentials  
   • sign(data) - Sign data with private key
-  • verify(data, signature) - Verify signatures
+  • verify(data, signature) - Verify signatures  
   • getDid() - Get DID string
   • getPublicKey() - Get public key
+  • public() - Get public identity data, without private key
+  • present() - Present identity 
+  • toJSON() - export indentity for persistence
+  • toDomain() - convert indentity to domain type IIdentity
+
+Getters:
+ • alias 
+ • did
+ • metadata
+ • provider
+ • publicKeyHex
+ • privateKeyHex
 
 Composed Units:
   • DID Unit: ${this.props.didUnit.whoami()}
@@ -347,8 +373,7 @@ ${Array.from(this._capabilities.keys())
   teach(): TeachingContract {
     return {
       unitId: this.props.dna.id,
-      capabilities: {
-        // Only native capabilities - never teach learned ones (Doctrine 19)
+      capabilities: {        
         issueCredential: ((...args: unknown[]) =>
           this.issueCredential(
             args[0] as BaseCredentialSubject,
@@ -375,10 +400,22 @@ ${Array.from(this._capabilities.keys())
   // ==========================================
   // NATIVE CAPABILITIES
   // ==========================================
+ 
+  /** 
+   * @depricated, use generate() instead.
+  */
 
   async generateIdentity(alias: string): Promise<Result<Identity>> {
     return Identity.generate(alias);
   }
+
+  /**
+   * Issue and sign Verifable Credential. 
+   * @param subject 
+   * @param type 
+   * @param issuer 
+   * @returns 
+   */
 
   async issueCredential(
     subject: BaseCredentialSubject,
@@ -588,6 +625,12 @@ ${Array.from(this._capabilities.keys())
     };
   }
 
+  /**
+   * Convert Identity props to domain entity IIdentity
+   * @returns 
+   * 
+   */
+
   toDomain(): IIdentity {
     return {
       alias: this.props.alias,
@@ -602,8 +645,6 @@ ${Array.from(this._capabilities.keys())
     };
   }
 
-
-
   /**
    * Export public identity data (no private key)
    */
@@ -611,6 +652,11 @@ ${Array.from(this._capabilities.keys())
     const { privateKeyHex, ...publicData } = this.props;
     return publicData;
   }
+
+  /**
+   * Presents identity 
+   * @returns IdentityPresent { did, publicKeyHex, credential }
+   */
 
   present(): IdentityPresent {
     return {

@@ -80,7 +80,7 @@ describe('Identity Unit Architecture', () => {
 
       // Test composed unit operations
       const didUnit = identity.didUnit();
-      expect(didUnit.whoami()).toContain('did');
+      expect(didUnit.whoami()).toContain('DID');
 
       const signerUnit = identity.signerUnit();
       expect(signerUnit.whoami()).toContain('Signer');
